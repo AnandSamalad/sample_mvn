@@ -45,7 +45,7 @@ jobs:
         fi
 
         # Update the version using Maven versions plugin
-        mvn ${{ needs.setup.outputs.mvn_profile }} versions:set -DnewVersion='${{ needs.setup.outputs.new_version }}' -DgenerateBackupPoms=false
+        mvn -P ${{ needs.setup.outputs.mvn_profile }} versions:set -DnewVersion='${{ needs.setup.outputs.new_version }}' -DgenerateBackupPoms=false
 
         # Check for changes before committing
         if ! git diff --quiet; then
