@@ -15,7 +15,7 @@ on:
 jobs:
 
   setup:
-    - name: update-version
+      name: update-version
       uses: ./.github/workflows/update-version.yml
       with:
         environment: ${{ inputs.environment }}
