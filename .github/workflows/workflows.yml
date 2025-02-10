@@ -28,6 +28,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Debug Outputs
+      run: |
+        echo "Maven Module: ${{ needs.setup.outputs.mvn_module }}"
+        echo "Current Version: ${{ needs.setup.outputs.current_version }}"
+        echo "New Version: ${{ needs.setup.outputs.new_version }}"
+
     - name: Update Service Version
       run: |
         # Configure Git user          
