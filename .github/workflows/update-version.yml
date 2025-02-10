@@ -7,7 +7,7 @@ on:
         required: true
         type: string
 
-     outputs:
+    outputs:
       current_version:
         description: 'current_version'
         value: ${{ jobs.get_properties.outputs.current_version }}
