@@ -1,0 +1,32 @@
+name: Build Container & Push to ECR
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  build:
+    runs-on: sakha_helm
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    
+    - name: Update Service Version
+      run: |
+        # Configure Git user          
+        git config user.email "anand.samalad@sakhaglobal.com"
+        git config user.name "AnandSamalad"
+
+        # Pull the latest changes from the remote branch (rebase to avoid merge commits)
+        git fetch origin ${{github.ref_name}}
+        git rebase origin/${{github.ref_name}}
+
+        # Update the version using Maven versions plugin
+        mvn -pl ${{needs.setup.outputs.mvn_module}} versions:set -DnewVersion='${{needs.setup.outputs.new_version}}' -DgenerateBackupPoms=false
+        
+        # Check if there are changes to commit and Commit the changes
+        git diff --exit-code || git commit -am "Update module ${{needs.setup.outputs.mvn_module}} version (v${{needs.setup.outputs.new_version}}) from GitHub Actions"
+
+        # Push the changes
+        git push origin HEAD:${{github.ref_name}}
