@@ -10,23 +10,24 @@ on:
         options:
           - dev
           - prod
-
+          
+permissions:
+  contents: write
 
 jobs:
-
   setup:
-      name: update-version
-      uses: ./.github/workflows/update-version.yml
-      with:
-        environment: ${{ inputs.environment }}
+    name: update-version
+    uses: AnandSamalad/sample_mvn/.github/workflows/update-version.yml@main  # Reference correctly
+    with:
+      environment: ${{ inputs.environment }}
 
   build:
     runs-on: self-hosted
+    needs: setup
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    
     - name: Update Service Version
       run: |
         # Configure Git user          
@@ -34,14 +35,22 @@ jobs:
         git config user.name "AnandSamalad"
 
         # Pull the latest changes from the remote branch (rebase to avoid merge commits)
-        git fetch origin ${{github.ref_name}}
-        git rebase origin/${{github.ref_name}}
+        git fetch origin ${{ github.ref_name }}
+        git rebase origin/${{ github.ref_name }}
+
+        # Ensure `mvn_module` exists (Fix missing output reference)
+        if [[ -z "${{ needs.setup.outputs.mvn_profile }}" ]]; then
+          echo "Error: mvn_profile is empty. Check 'setup' workflow outputs."
+          exit 1
+        fi
 
         # Update the version using Maven versions plugin
-        mvn ${{needs.setup.outputs.mvn_module}} versions:set -DnewVersion='${{needs.setup.outputs.new_version}}' -DgenerateBackupPoms=false
-        
-        # Check if there are changes to commit and Commit the changes
-        git diff --exit-code || git commit -am "Update module ${{needs.setup.outputs.mvn_module}} version (v${{needs.setup.outputs.new_version}}) from GitHub Actions"
+        mvn ${{ needs.setup.outputs.mvn_profile }} versions:set -DnewVersion='${{ needs.setup.outputs.new_version }}' -DgenerateBackupPoms=false
 
-        # Push the changes
-        git push origin HEAD:${{github.ref_name}}
+        # Check for changes before committing
+        if ! git diff --quiet; then
+          git commit -am "Update module ${{ needs.setup.outputs.mvn_profile }} version (v${{ needs.setup.outputs.new_version }}) from GitHub Actions"
+          git push origin HEAD:${{ github.ref_name }}
+        else
+          echo "No changes to commit."
+        fi

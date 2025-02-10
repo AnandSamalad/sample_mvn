@@ -20,6 +20,10 @@ on:
         description: 'image_tag'
         value: ${{ jobs.get_properties.outputs.image_tag }}
 
+permissions:
+  contents: write
+
+
 jobs:
 
   get_properties:
