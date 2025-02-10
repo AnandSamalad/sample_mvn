@@ -14,16 +14,18 @@ on:
 
 jobs:
 
+  setup:
+    - name: update-version
+      uses: ./.github/workflows/update-version.yml
+      with:
+        environment: ${{ inputs.environment }}
+
   build:
     runs-on: self-hosted
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup
-      uses: ./.github/workflows/update-version.yml
-      with:
-        environment: ${{ inputs.environment }}
     
     - name: Update Service Version
       run: |

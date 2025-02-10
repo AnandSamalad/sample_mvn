@@ -55,16 +55,16 @@ jobs:
           else
             # it's an environmental branch
             # Get the current version from the pom.xml file
-            current_version=$(mvn -pl ${{steps.get-variables.outputs.mvn_module}} help:evaluate -Dexpression=project.version -q -DforceStdout)
+            current_version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
             if [ "${{ inputs.environment }}" == "sandbox" ]; then
               echo "current_version=$current_version" >> $GITHUB_OUTPUT
               echo "new_version=$current_version" >> $GITHUB_OUTPUT
               echo "tag=${{ inputs.environment }}_${{ steps.get-variables.outputs.mvn_module }}_v$current_version" >> $GITHUB_OUTPUT
             else
               # Check if CURRENT_VERSION ends with -SNAPSHOT
-              major_version=$(mvn -pl ${{steps.get-variables.outputs.mvn_module}} build-helper:parse-version help:evaluate -Dexpression=parsedVersion.majorVersion -q -DforceStdout)
-              minor_version=$(mvn -pl ${{steps.get-variables.outputs.mvn_module}} build-helper:parse-version help:evaluate -Dexpression=parsedVersion.minorVersion -q -DforceStdout)
-              next_incremental_version=$(mvn -pl ${{steps.get-variables.outputs.mvn_module}} build-helper:parse-version help:evaluate -Dexpression=parsedVersion.nextIncrementalVersion -q -DforceStdout)
+              major_version=$(mvn  build-helper:parse-version help:evaluate -Dexpression=parsedVersion.majorVersion -q -DforceStdout)
+              minor_version=$(mvn  build-helper:parse-version help:evaluate -Dexpression=parsedVersion.minorVersion -q -DforceStdout)
+              next_incremental_version=$(mvn build-helper:parse-version help:evaluate -Dexpression=parsedVersion.nextIncrementalVersion -q -DforceStdout)
               if [[ "$current_version" == *"-SNAPSHOT" ]]; then
                 # If it does, increment the patch version and append -SNAPSHOT
                 new_version=$major_version.$minor_version.$next_incremental_version-SNAPSHOT
