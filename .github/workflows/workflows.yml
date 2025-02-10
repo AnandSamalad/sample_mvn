@@ -2,6 +2,15 @@ name: Build Container & Push to ECR
 
 on:
   workflow_dispatch:
+    inputs:
+      environment:
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - prod
+
 
 jobs:
 
@@ -11,6 +20,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Setup
+      uses: ./.github/workflows/update-version.yml
+      with:
+        environment: ${{ inputs.environment }}
     
     - name: Update Service Version
       run: |
@@ -23,7 +36,7 @@ jobs:
         git rebase origin/${{github.ref_name}}
 
         # Update the version using Maven versions plugin
-        mvn -pl ${{needs.setup.outputs.mvn_module}} versions:set -DnewVersion='${{needs.setup.outputs.new_version}}' -DgenerateBackupPoms=false
+        mvn ${{needs.setup.outputs.mvn_module}} versions:set -DnewVersion='${{needs.setup.outputs.new_version}}' -DgenerateBackupPoms=false
         
         # Check if there are changes to commit and Commit the changes
         git diff --exit-code || git commit -am "Update module ${{needs.setup.outputs.mvn_module}} version (v${{needs.setup.outputs.new_version}}) from GitHub Actions"

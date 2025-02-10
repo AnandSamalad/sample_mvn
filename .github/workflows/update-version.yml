@@ -1,0 +1,80 @@
+name: Get module properties
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: false
+        type: string
+
+     outputs:
+      current_version:
+        description: 'current_version'
+        value: ${{ jobs.get_properties.outputs.current_version }}
+
+      new_version:
+        description: 'new_version'
+        value: ${{ jobs.get_properties.outputs.new_version }}
+
+      image_tag:
+        description: 'image_tag'
+        value: ${{ jobs.get_properties.outputs.image_tag }}
+
+jobs:
+
+  get_properties:
+    name: Get properties
+    runs-on: self-hosted
+    outputs:
+        mvn_profile: ${{ steps.get-mvn-profile.outputs.mvn_profile }}
+        current_version: ${{ steps.get-version.outputs.current_version }}
+        new_version: ${{ steps.get-version.outputs.new_version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get maven profile
+        id: get-mvn-profile
+        if: ${{ inputs.environment != ''}}
+        run: |
+          if [ "${{ inputs.environment }}" == "stage" ]; then
+            echo "mvn_profile=uat" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.environment }}" == "sandbox" ]; then
+            echo "mvn_profile=api-sandbox" >> $GITHUB_OUTPUT
+          else
+            echo "mvn_profile=${{ inputs.environment }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get version
+        id: get-version
+        run: |
+          if [ "${{ contains(fromJson('["master","dev","qa","stage"]'), github.ref_name) }}" == "false" ]; then
+            # not an environmental branch
+            echo "tag=${{github.ref_name}}" >> $GITHUB_OUTPUT
+          else
+            # it's an environmental branch
+            # Get the current version from the pom.xml file
+            current_version=$(mvn -pl ${{steps.get-variables.outputs.mvn_module}} help:evaluate -Dexpression=project.version -q -DforceStdout)
+            if [ "${{ inputs.environment }}" == "sandbox" ]; then
+              echo "current_version=$current_version" >> $GITHUB_OUTPUT
+              echo "new_version=$current_version" >> $GITHUB_OUTPUT
+              echo "tag=${{ inputs.environment }}_${{ steps.get-variables.outputs.mvn_module }}_v$current_version" >> $GITHUB_OUTPUT
+            else
+              # Check if CURRENT_VERSION ends with -SNAPSHOT
+              major_version=$(mvn -pl ${{steps.get-variables.outputs.mvn_module}} build-helper:parse-version help:evaluate -Dexpression=parsedVersion.majorVersion -q -DforceStdout)
+              minor_version=$(mvn -pl ${{steps.get-variables.outputs.mvn_module}} build-helper:parse-version help:evaluate -Dexpression=parsedVersion.minorVersion -q -DforceStdout)
+              next_incremental_version=$(mvn -pl ${{steps.get-variables.outputs.mvn_module}} build-helper:parse-version help:evaluate -Dexpression=parsedVersion.nextIncrementalVersion -q -DforceStdout)
+              if [[ "$current_version" == *"-SNAPSHOT" ]]; then
+                # If it does, increment the patch version and append -SNAPSHOT
+                new_version=$major_version.$minor_version.$next_incremental_version-SNAPSHOT
+              else
+                # If it doesn't, increment the patch version only
+                new_version=$major_version.$minor_version.$next_incremental_version
+              fi
+              # Set the NEW_VERSION in the GitHub environment
+              echo "current_version=$current_version" >> $GITHUB_OUTPUT
+              echo "new_version=$new_version" >> $GITHUB_OUTPUT
+              echo "tag=${{ inputs.environment }}_${{ steps.get-variables.outputs.mvn_module }}_v$new_version" >> $GITHUB_OUTPUT
+            fi
+          fi
