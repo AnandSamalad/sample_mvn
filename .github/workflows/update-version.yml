@@ -16,6 +16,10 @@ on:
         description: 'new_version'
         value: ${{ jobs.get_properties.outputs.new_version }}
 
+      mvn_profile:
+        description: 'mvn_profile'
+        value: ${{ jobs.get_properties.outputs.mvn_profile }}
+
       image_tag:
         description: 'image_tag'
         value: ${{ jobs.get_properties.outputs.image_tag }}
