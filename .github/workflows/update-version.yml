@@ -64,17 +64,21 @@ jobs:
 
           if [[ "$current_version" == *"-SNAPSHOT" ]]; then
             new_version="$major_version.$minor_version.$next_incremental_version-SNAPSHOT"
+            echo "tag=${{ inputs.environment }}_v$new_version"
           else
             new_version="$major_version.$minor_version.$next_incremental_version"
+            echo "tag=${{ inputs.environment }}_v$new_version"
           fi
 
           # Debugging outputs
           echo "Extracted Current Version: $current_version"
           echo "Generated New Version: $new_version"
+          echo "New Image Tag: $tag"
 
           # Correctly set GitHub outputs
           echo "current_version=$current_version" | tee -a $GITHUB_OUTPUT
           echo "new_version=$new_version" | tee -a $GITHUB_OUTPUT
+          echo "image_tag=$tag"
 
 
       # - name: Get version
