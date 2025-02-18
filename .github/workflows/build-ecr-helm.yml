@@ -73,7 +73,7 @@ jobs:
       with:
         repository: ${{ needs.setup.outputs.helm_repository }}
         ref: ${{ env.HELM_BRANCH }}
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: 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
         path: helm-tmp
 
     - name: Debug Helm Path
