@@ -23,6 +23,10 @@ on:
       image_tag:
         description: 'image_tag'
         value: ${{ jobs.get_properties.outputs.image_tag }}
+      
+      helm_image_tag_path:
+        description: "image_tag_path"
+        value: ${{ jobs.get_properties.outputs.helm_image_tag_path }}
 
 permissions:
   contents: write
