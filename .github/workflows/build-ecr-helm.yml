@@ -65,7 +65,7 @@ jobs:
     - name: Set helm branch
       if: ${{ needs.setup.outputs.new_version != '' }}
       id: set-helm-branch
-      run: echo "HELM_BRANCH=master" >> $GITHUB_ENV
+      run: echo "HELM_BRANCH=main" >> $GITHUB_ENV
 
     - name: Checkout Helm Project - ${{ needs.setup.outputs.helm_repository }} - ${{ env.HELM_BRANCH }}
       if: ${{ needs.setup.outputs.new_version != '' }}

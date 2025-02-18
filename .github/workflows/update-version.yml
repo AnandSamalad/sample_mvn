@@ -54,8 +54,8 @@ jobs:
         id: get-variables
         run: |
           variables_json=$(cat ./.github/workflows/properties.json)
-          echo "ecr_repository=$(echo $variables_json | jq -r '.modules.${{inputs.module}}.ecr_repository')" >> $GITHUB_OUTPUT
-          echo "port=$(echo $variables_json | jq -r '.modules.${{inputs.module}}.port')" >> $GITHUB_OUTPUT
+          echo "ecr_repository=$(echo $variables_json | jq -r '.service.sample_mvn.ecr_repository')" >> $GITHUB_OUTPUT
+          echo "port=$(echo $variables_json | jq -r '.service.sample_mvn.port')" >> $GITHUB_OUTPUT
 
       - name: Get Helm variables
         id: get-helm-variables
