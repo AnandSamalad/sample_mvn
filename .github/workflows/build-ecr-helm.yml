@@ -102,6 +102,12 @@ jobs:
       with:
         cmd: yq -i '.appVersion = "${{ needs.setup.outputs.new_version }}"' helm-tmp/Chart.yaml
 
+    - name: Debug Helm Tag Before Update
+      run: | 
+        cat helm-tmp/${{ needs.setup.outputs.helm_values_file }}
+        echo "${{ needs.setup.outputs.image_tag }}"
+
+
     - name: HELM - Set image tag
       if: ${{ needs.setup.outputs.new_version != '' && needs.setup.outputs.image_tag != steps.get-helm-tag.outputs.result }}
       uses: mikefarah/yq@v4.44.2
