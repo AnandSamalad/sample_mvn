@@ -28,8 +28,29 @@ on:
         description: "image_tag_path"
         value: ${{ jobs.get_properties.outputs.helm_image_tag_path }}
 
+      helm_repository:
+        description: 'helm_repository'
+        value: ${{ jobs.get_properties.outputs.helm_repository }}
+
+      helm_chart:
+        description: 'ecr_repository'
+        value: ${{ jobs.get_properties.outputs.helm_chart }}
+
+      helm_values_file:
+        description: 'ecr_repository'
+        value: ${{ jobs.get_properties.outputs.helm_values_file }}
+
+      helm_namespace:
+        description: 'helm_namespace'
+        value: ${{ jobs.get_properties.outputs.helm_namespace }}
+
+      helm_release_name:
+        description: 'helm_release_name'
+        value: ${{ jobs.get_properties.outputs.helm_release_name }}
+      
 permissions:
   contents: write
+  id-token: write
 
 
 jobs:
