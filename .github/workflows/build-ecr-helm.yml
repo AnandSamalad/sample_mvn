@@ -102,6 +102,11 @@ jobs:
       with:
         cmd: yq -i '.appVersion = "${{ needs.setup.outputs.new_version }}"' helm-tmp/Chart.yaml
 
+    - name: Debug All Outputs
+      run: |
+        echo "Setup Outputs:"
+        echo "${{ toJson(needs.setup.outputs) }}"
+
     - name: Debug Helm Tag Before Update
       run: | 
         cat helm-tmp/${{ needs.setup.outputs.helm_values_file }}
