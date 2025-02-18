@@ -9,7 +9,8 @@
             "port":"8181",
             "environment": {
                 "dev":{
-                    "helm_values_file": "values.yml"
+                    "helm_values_file": "values.yml",
+                    "helm_namespace": "apps"
                 }
             }
         }
