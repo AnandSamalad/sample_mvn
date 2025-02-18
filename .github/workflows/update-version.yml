@@ -61,7 +61,7 @@ jobs:
         id: get-helm-variables
         if: ${{ inputs.environment != ''}}
         run: |
-          variables_json=$(cat ./.github/workflows/sp_modules_properties.json)
+          variables_json=$(cat ./.github/workflows/properties.json)
           echo "helm_release_name=$(echo $variables_json | jq -r '.modules.${{inputs.module}}.helm_release_name')" >> $GITHUB_OUTPUT
           echo "helm_repository=$(echo $variables_json | jq -r '.modules.${{inputs.module}}.helm_repository')" >> $GITHUB_OUTPUT
           echo "helm_image_tag_path=$(echo $variables_json | jq -r '.modules.${{inputs.module}}.image_tag_path')" >> $GITHUB_OUTPUT
