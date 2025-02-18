@@ -73,7 +73,6 @@ jobs:
       with:
         repository: ${{ needs.setup.outputs.helm_repository }}
         ref: ${{ env.HELM_BRANCH }}
-        token: ${{ secrets.TOKEN }}
         path: helm-tmp
 
     - name: HELM - Get helm tag
