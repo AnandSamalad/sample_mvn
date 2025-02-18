@@ -53,7 +53,7 @@ jobs:
       - name: Get Build variables
         id: get-variables
         run: |
-          variables_json=$(cat ./.github/workflows/sp_modules_properties.json)
+          variables_json=$(cat ./.github/workflows/properties.json)
           echo "ecr_repository=$(echo $variables_json | jq -r '.modules.${{inputs.module}}.ecr_repository')" >> $GITHUB_OUTPUT
           echo "port=$(echo $variables_json | jq -r '.modules.${{inputs.module}}.port')" >> $GITHUB_OUTPUT
 
