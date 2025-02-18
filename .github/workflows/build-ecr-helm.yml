@@ -116,8 +116,8 @@ jobs:
         cd helm-tmp
 
         # Configure Git user
-        git config user.email "g2netops@g2risksolutions.com"
-        git config user.name "g2netops"
+        git config user.email "anand.samalad@sakhaglobal.com"
+        git config user.name "AnandSamalad"
 
         # Commit and push changes
         git commit -am "Update module ${{ needs.setup.outputs.mvn_module }} version (v${{ needs.setup.outputs.new_version }}) from GitHub Actions"
