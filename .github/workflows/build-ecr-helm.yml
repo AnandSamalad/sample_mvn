@@ -73,8 +73,9 @@ jobs:
       with:
         repository: ${{ needs.setup.outputs.helm_repository }}
         ref: ${{ env.HELM_BRANCH }}
+        token: ${{ secrets.GITHUB_TOKEN }}
         path: helm-tmp
-        
+
     - name: Debug Helm Path
       run: |
         echo "Checking file: helm-tmp/${{ needs.setup.outputs.helm_chart }}/${{ needs.setup.outputs.helm_values_file }}"
