@@ -1,0 +1,121 @@
+name: Build Container & Push to ECR
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - prod
+          
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  setup:
+    name: update-version
+    uses: AnandSamalad/sample_mvn/.github/workflows/update-version.yml@main  # Reference correctly
+    with:
+      environment: ${{ inputs.environment }}
+
+  post_build:
+    runs-on: self-hosted
+    needs: setup
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Debug Outputs
+      run: |
+        echo "Current Version: ${{ needs.setup.outputs.current_version }}"
+        echo "New Version: ${{ needs.setup.outputs.new_version }}"
+        echo "image_tag: ${{ needs.setup.outputs.image_tag }}"
+
+    - name: Update Service Version
+      run: |
+        # Configure Git user          
+        git config user.email "anand.samalad@sakhaglobal.com"
+        git config user.name "AnandSamalad"
+
+        # Pull the latest changes from the remote branch (rebase to avoid merge commits)
+        git fetch origin ${{ github.ref_name }}
+        git rebase origin/${{ github.ref_name }}
+
+        # Ensure `mvn_module` exists (Fix missing output reference)
+        if [[ -z "${{ needs.setup.outputs.mvn_profile }}" ]]; then
+          echo "Error: mvn_profile is empty. Check 'setup' workflow outputs."
+          exit 1
+        fi
+
+        # Update the version using Maven versions plugin
+        mvn versions:set -DnewVersion='${{ needs.setup.outputs.new_version }}' -DgenerateBackupPoms=false
+
+        # Check for changes before committing
+        if ! git diff --quiet; then
+          git commit -am "Update module ${{ needs.setup.outputs.mvn_profile }} version (v${{ needs.setup.outputs.new_version }}) from GitHub Actions"
+          git push origin HEAD:${{ github.ref_name }}
+        else
+          echo "No changes to commit."
+        fi
+
+    - name: Set helm branch
+      if: ${{ needs.setup.outputs.new_version != '' }}
+      id: set-helm-branch
+      run: echo "HELM_BRANCH=master" >> $GITHUB_ENV
+
+    - name: Checkout Helm Project - ${{ needs.setup.outputs.helm_repository }} - ${{ env.HELM_BRANCH }}
+      if: ${{ needs.setup.outputs.new_version != '' }}
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ needs.setup.outputs.helm_repository }}
+        ref: ${{ env.HELM_BRANCH }}
+        token: ${{ secrets.TOKEN }}
+        path: helm-tmp
+
+    - name: HELM - Get helm tag
+      if: ${{ needs.setup.outputs.new_version != '' }}
+      uses: mikefarah/yq@v4.44.2
+      id: get-helm-tag
+      with:
+        cmd: yq '.${{ needs.setup.outputs.helm_image_tag_path }}' helm-tmp/${{ needs.setup.outputs.helm_chart }}/${{ needs.setup.outputs.helm_values_file }}
+
+    - name: HELM - Get chart version
+      if: ${{ needs.setup.outputs.new_version != '' }}
+      uses: mikefarah/yq@v4.44.2
+      id: get-chart-version
+      with:
+        cmd: yq '.appVersion' helm-tmp/${{ needs.setup.outputs.helm_chart }}/Chart.yaml
+
+    - name: HELM - Set Chart Version
+      if: ${{ needs.setup.outputs.new_version != '' && needs.setup.outputs.new_version != steps.get-chart-version.outputs.result }}
+      uses: mikefarah/yq@v4.44.2
+      id: set-chart-version
+      with:
+        cmd: yq -i '.appVersion = "${{ needs.setup.outputs.new_version }}"' helm-tmp/${{ needs.setup.outputs.helm_chart }}/Chart.yaml
+
+    - name: HELM - Set image tag
+      if: ${{ needs.setup.outputs.new_version != '' && needs.setup.outputs.image_tag != steps.get-helm-tag.outputs.result }}
+      uses: mikefarah/yq@v4.44.2
+      id: set-image-tag
+      with:
+        cmd: yq -i '.${{ needs.setup.outputs.helm_image_tag_path }} = "${{ needs.setup.outputs.image_tag }}"' helm-tmp/${{ needs.setup.outputs.helm_chart }}/${{ needs.setup.outputs.helm_values_file }}
+
+    - name: Update Helm Chart
+      if: ${{ needs.setup.outputs.new_version != '' && needs.setup.outputs.image_tag != steps.get-helm-tag.outputs.result }}
+      id: update-helm-chart
+      run: |
+        cd helm-tmp
+
+        # Configure Git user
+        git config user.email "g2netops@g2risksolutions.com"
+        git config user.name "g2netops"
+
+        # Commit and push changes
+        git commit -am "Update module ${{ needs.setup.outputs.mvn_module }} version (v${{ needs.setup.outputs.new_version }}) from GitHub Actions"
+        git tag ${{ needs.setup.outputs.image_tag }}
+        git push origin HEAD:"${{ env.HELM_BRANCH }}"
+        git push --tags

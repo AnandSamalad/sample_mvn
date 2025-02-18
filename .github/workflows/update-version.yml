@@ -34,13 +34,40 @@ jobs:
     name: Get properties
     runs-on: self-hosted
     outputs:
+        ecr_repository: ${{ steps.get-variables.outputs.ecr_repository }}
         mvn_profile: ${{ steps.get-mvn-profile.outputs.mvn_profile }}
         current_version: ${{ steps.get-version.outputs.current_version }}
         new_version: ${{ steps.get-version.outputs.new_version }}
+        image_tag: ${{ steps.get-version.outputs.tag }}
+
+        helm_release_name: ${{ steps.get-helm-variables.outputs.helm_release_name }}
+        helm_repository: ${{ steps.get-helm-variables.outputs.helm_repository }}
+        helm_image_tag_path: ${{ steps.get-helm-variables.outputs.helm_image_tag_path }}
+        helm_chart: ${{ steps.get-helm-variables.outputs.helm_chart }}
+        helm_values_file: ${{ steps.get-helm-variables.outputs.helm_values_file }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Get Build variables
+        id: get-variables
+        run: |
+          variables_json=$(cat ./.github/workflows/sp_modules_properties.json)
+          echo "ecr_repository=$(echo $variables_json | jq -r '.modules.${{inputs.module}}.ecr_repository')" >> $GITHUB_OUTPUT
+          echo "port=$(echo $variables_json | jq -r '.modules.${{inputs.module}}.port')" >> $GITHUB_OUTPUT
+
+      - name: Get Helm variables
+        id: get-helm-variables
+        if: ${{ inputs.environment != ''}}
+        run: |
+          variables_json=$(cat ./.github/workflows/sp_modules_properties.json)
+          echo "helm_release_name=$(echo $variables_json | jq -r '.modules.${{inputs.module}}.helm_release_name')" >> $GITHUB_OUTPUT
+          echo "helm_repository=$(echo $variables_json | jq -r '.modules.${{inputs.module}}.helm_repository')" >> $GITHUB_OUTPUT
+          echo "helm_image_tag_path=$(echo $variables_json | jq -r '.modules.${{inputs.module}}.image_tag_path')" >> $GITHUB_OUTPUT
+          echo "helm_chart=$(echo $variables_json | jq -r '.modules.${{inputs.module}}.helm_chart')" >> $GITHUB_OUTPUT
+          echo "helm_values_file=$(echo $variables_json | jq -r ".modules.${{inputs.module}}.environments.${{inputs.environment}}.helm_values_file")" >> $GITHUB_OUTPUT
+          echo "helm_namespace=$(echo $variables_json | jq -r ".modules.${{inputs.module}}.environments.${{inputs.environment}}.helm_namespace")" >> $GITHUB_OUTPUT          
 
       - name: Get maven profile
         id: get-mvn-profile
@@ -79,37 +106,3 @@ jobs:
           echo "current_version=$current_version" | tee -a $GITHUB_OUTPUT
           echo "new_version=$new_version" | tee -a $GITHUB_OUTPUT
           echo "image_tag=$tag"
-
-
-      # - name: Get version
-      #   id: get-version
-      #   run: |
-      #     if [ "${{ contains(fromJson('["master","dev","qa","stage"]'), github.ref_name) }}" == "false" ]; then
-      #       # not an environmental branch
-      #       echo "tag=${{github.ref_name}}" >> $GITHUB_OUTPUT
-      #     else
-      #       # it's an environmental branch
-      #       # Get the current version from the pom.xml file
-      #       current_version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-      #       if [ "${{ inputs.environment }}" == "sandbox" ]; then
-      #         echo "current_version=$current_version" >> $GITHUB_OUTPUT
-      #         echo "new_version=$current_version" >> $GITHUB_OUTPUT
-      #         echo "tag=${{ inputs.environment }}_${{ steps.get-variables.outputs.mvn_module }}_v$current_version" >> $GITHUB_OUTPUT
-      #       else
-      #         # Check if CURRENT_VERSION ends with -SNAPSHOT
-      #         major_version=$(mvn  build-helper:parse-version help:evaluate -Dexpression=parsedVersion.majorVersion -q -DforceStdout)
-      #         minor_version=$(mvn  build-helper:parse-version help:evaluate -Dexpression=parsedVersion.minorVersion -q -DforceStdout)
-      #         next_incremental_version=$(mvn build-helper:parse-version help:evaluate -Dexpression=parsedVersion.nextIncrementalVersion -q -DforceStdout)
-      #         if [[ "$current_version" == *"-SNAPSHOT" ]]; then
-      #           # If it does, increment the patch version and append -SNAPSHOT
-      #           new_version=$major_version.$minor_version.$next_incremental_version-SNAPSHOT
-      #         else
-      #           # If it doesn't, increment the patch version only
-      #           new_version=$major_version.$minor_version.$next_incremental_version
-      #         fi
-      #         # Set the NEW_VERSION in the GitHub environment
-      #         echo "current_version=$current_version" >> $GITHUB_OUTPUT
-      #         echo "new_version=$new_version" >> $GITHUB_OUTPUT
-      #         echo "tag=${{ inputs.environment }}_v$new_version" >> $GITHUB_OUTPUT
-      #       fi
-      #     fi
